@@ -1,92 +1,95 @@
-const firstSongLine: string[] = [
-  `It's `,
-  "the ",
-  "edge ",
-  "of ",
-  "the ",
-  "world ",
-  "and ",
-  "all ",
-  "of ",
-  "the ",
-  "Western ",
-  "civilization ",
-];
+import { resolve } from "path";
 
-const secondSongLine: string[] = [
-  "The ",
-  "sun ",
-  "may ",
-  "rise ",
-  "in ",
-  "the ",
-  "East, ",
-  "at ",
-  "least ",
-  "it ",
-  "settles ",
-  "in ",
-  "the ",
-  "final ",
-  "location ",
-];
+type SongWord = {
+  w: string;
+  duration?: number;
+  delayAfterWord?: number;
+  removeSpace?: boolean;
+};
 
-const thirdSongLine: string[] = [
-  `It's `,
-  "understood ",
-  "that ",
-  "Hollywood ",
-  "sells ",
-  "Californication ",
-];
+process.stdout.write("\x1B[?25l");
 
-const firstLineTimeout: number[] = [
-  200, 200, 200, 200, 200, 200, 200, 200, 225, 250, 200, 200,
-];
-
-const secondLineTimeout: number[] = [
-  200, 200, 200, 200, 200, 200, 200, 200, 225, 250, 200, 200, 200, 200, 200,
-];
-
-const thirdLineTimeout: number[] = [500, 800, 400, 1000, 800, 1200];
-
-const songLyrics: string[][] = [firstSongLine, secondSongLine, thirdSongLine];
-const songTimeouts: number[][] = [
-  firstLineTimeout,
-  secondLineTimeout,
-  thirdLineTimeout,
+const song: SongWord[][] = [
+  [
+    { w: "It's" },
+    { w: "the", delayAfterWord: 100 },
+    { w: "edge" },
+    { w: "of" },
+    { w: "the" },
+    { w: "world" },
+    { w: "and" },
+    { w: "all" },
+    { w: "of" },
+    { w: "Western" },
+    { w: "civilization", delayAfterWord: 1250 },
+  ],
+  [
+    { w: "The" },
+    { w: "sun" },
+    { w: "may" },
+    { w: "rise" },
+    { w: "in" },
+    { w: "the" },
+    { w: "East," },
+    { w: "at" },
+    { w: "least" },
+    { w: "it" },
+    { w: "settled" },
+    { w: "in" },
+    { w: "a" },
+    { w: "final" },
+    { w: "location", delayAfterWord: 1050 },
+  ],
+  [
+    { w: "It's" },
+    { w: "understood" },
+    { w: "that" },
+    { w: "Hollywood" },
+    { w: "sells" },
+    { w: "Cali", delayAfterWord: 100, removeSpace: true },
+    { w: "for", delayAfterWord: 100, removeSpace: true },
+    { w: "nication", delayAfterWord: 150 },
+  ],
 ];
 
 let songOutput: string = "";
-let alreadyShownLines: string = '';
+let alreadyShownLines: string = "";
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function playSong() {
-  for (let line = 0; line < songLyrics.length; line++) {
+  for (let line = 0; line < song.length; line++) {
     for (
       let songWordIndex = 0;
-      songWordIndex < songLyrics[line].length;
+      songWordIndex < song[line].length;
       songWordIndex++
     ) {
-      await new Promise<void>((resolve) =>
-        setTimeout(() => {
-          console.clear();
-          const cuttedOddElements: string = alreadyShownLines.slice(0, -2);
-          console.log(cuttedOddElements);
-          songOutput += songLyrics[line][songWordIndex];
-          if (songWordIndex === songLyrics[line].length - 1) {
-            console.log(songOutput);
-            alreadyShownLines += songOutput + '\n';
-            songOutput = "";
-          } else {
-            console.log(songOutput);
-          }
-          resolve();
-        }, songTimeouts[line][songWordIndex])
-      );
+      const wordItem = song[line][songWordIndex];
+      for (let charIndex = 0; charIndex < wordItem.w.length; charIndex++) {
+        await sleep(wordItem.duration ?? 70);
+        const char = wordItem.w[charIndex];
+        songOutput += char;
+
+        const isLastChar = charIndex === wordItem.w.length - 1;
+        if (isLastChar) {
+          songOutput += wordItem.removeSpace ? "" : " ";
+        }
+
+        console.clear();
+        console.log(alreadyShownLines + songOutput);
+      }
+
+      await sleep(wordItem.delayAfterWord ?? 0);
     }
+
+    alreadyShownLines += songOutput + "\n";
+    songOutput = "";
+
+    console.clear();
+    console.log(alreadyShownLines);
   }
-          console.clear();
-          console.log(alreadyShownLines);
 }
 
 playSong();
